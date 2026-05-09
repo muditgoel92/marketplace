@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import '../App.css';
 
@@ -7,10 +7,12 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:800
 
 export default function ListYourFirm() {
   const { vendorId } = useParams(); // For product-only listing
+  const location = useLocation();
   const navigate = useNavigate();
   const [vendors, setVendors] = useState([]);
   const [categories, setCategories] = useState([]);
   const [showProductOnly, setShowProductOnly] = useState(!!vendorId);
+  const [isServiceListing, setIsServiceListing] = useState(location.pathname.includes('/list-service/'));
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -41,6 +43,21 @@ export default function ListYourFirm() {
     documentation_url: '',
   });
 
+  // Service form state
+  const [serviceData, setServiceData] = useState({
+    vendor: vendorId || '',
+    name: '',
+    short_description: '',
+    description: '',
+    category: '',
+    service_type: 'consulting',
+    deliverables: '',
+    pricing_model: 'project',
+    pricing_description: '',
+    consultation_available: true,
+    case_studies_url: '',
+  });
+
   // File state for uploads
   const [vendorLogo, setVendorLogo] = useState(null);
   const [vendorLogoPreview, setVendorLogoPreview] = useState(null);
@@ -52,6 +69,13 @@ export default function ListYourFirm() {
     { key: 'industry', value: '' },
     { key: 'compliance_type', value: '' },
     { key: 'target_users', value: '' },
+  ]);
+
+  // Service metadata/tags state
+  const [serviceMetadata, setServiceMetadata] = useState([
+    { key: 'expertise', value: '' },
+    { key: 'industry', value: '' },
+    { key: 'certification', value: '' },
   ]);
 
   useEffect(() => {
@@ -105,6 +129,28 @@ export default function ListYourFirm() {
       reader.onload = () => setProductImagePreview(reader.result);
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleServiceChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setServiceData({
+      ...serviceData,
+      [name]: type === 'checkbox' ? checked : value,
+    });
+  };
+
+  const handleServiceMetadataChange = (index, field, value) => {
+    const newMetadata = [...serviceMetadata];
+    newMetadata[index][field] = value;
+    setServiceMetadata(newMetadata);
+  };
+
+  const handleAddServiceMetadata = () => {
+    setServiceMetadata([...serviceMetadata, { key: '', value: '' }]);
+  };
+
+  const handleRemoveServiceMetadata = (index) => {
+    setServiceMetadata(serviceMetadata.filter((_, i) => i !== index));
   };
 
   const handleMetadataChange = (index, field, value) => {
@@ -207,13 +253,61 @@ export default function ListYourFirm() {
     }
   };
 
+  const submitService = async (vendorIdToUse) => {
+    try {
+      const formData = new FormData();
+      formData.append('vendor', vendorIdToUse);
+      formData.append('name', serviceData.name);
+      formData.append('short_description', serviceData.short_description);
+      formData.append('description', serviceData.description);
+      formData.append('category', serviceData.category);
+      formData.append('service_type', serviceData.service_type);
+      formData.append('deliverables', serviceData.deliverables);
+      formData.append('pricing_model', serviceData.pricing_model);
+      formData.append('pricing_description', serviceData.pricing_description);
+      formData.append('consultation_available', serviceData.consultation_available);
+      formData.append('case_studies_url', serviceData.case_studies_url);
+      formData.append('rating', 0);
+      formData.append('review_count', 0);
+
+      const serviceRes = await axios.post(`${API_BASE_URL}/services/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      // Submit metadata for the service
+      if (serviceMetadata && serviceMetadata.length > 0) {
+        for (const meta of serviceMetadata) {
+          if (meta.key && meta.value) {
+            await axios.post(`${API_BASE_URL}/service-metadata/`, {
+              service: serviceRes.data.id,
+              key: meta.key,
+              value: meta.value,
+            });
+          }
+        }
+      }
+
+      return serviceRes.data.id;
+    } catch (error) {
+      console.error('Error creating service:', error);
+      throw new Error(
+        error.response?.data?.detail ||
+        error.response?.data?.name?.[0] ||
+        'Failed to create service'
+      );
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSubmitted(false);
 
     try {
-      if (showProductOnly) {
+      if (isServiceListing) {
+        // Service-only submission for existing vendor
+        await submitService(serviceData.vendor);
+      } else if (showProductOnly) {
         // Product-only submission for existing vendor
         await submitProduct(productData.vendor);
       } else {
@@ -239,12 +333,13 @@ export default function ListYourFirm() {
     <div className="container">
       <div className="card" style={{ maxWidth: '800px', margin: '0 auto' }}>
         <h1 style={{ marginBottom: '0.5rem', color: '#1a1a2e' }}>
-          {showProductOnly ? '📦 List a New Product' : '🏢 List Your Firm & Products'}
+          {isServiceListing ? '🛠️ List a New Service' :
+           showProductOnly ? '📦 List a New Product' : '🏢 List Your Firm & Products'}
         </h1>
         <p style={{ color: '#666', marginBottom: '2rem' }}>
-          {showProductOnly
-            ? 'Add a new product to your existing firm.'
-            : 'Register your firm and list your first product on our marketplace.'}
+          {isServiceListing ? 'Add a new professional service to your existing firm.' :
+           showProductOnly ? 'Add a new product to your existing firm.' :
+           'Register your firm and list your first product on our marketplace.'}
         </p>
 
         {error && (
@@ -424,7 +519,7 @@ export default function ListYourFirm() {
           )}
 
           {/* Existing Vendor Selection */}
-          {showProductOnly && (
+          {(showProductOnly || isServiceListing) && (
             <fieldset style={{ padding: '1.5rem', border: '2px solid #e0e0e0', borderRadius: '6px' }}>
               <legend style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1a1a2e', padding: '0 0.5rem' }}>
                 Select Your Firm
@@ -435,8 +530,8 @@ export default function ListYourFirm() {
                 </label>
                 <select
                   name="vendor"
-                  value={productData.vendor}
-                  onChange={handleProductChange}
+                  value={isServiceListing ? serviceData.vendor : productData.vendor}
+                  onChange={isServiceListing ? handleServiceChange : handleProductChange}
                   required
                   style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}
                 >
@@ -451,13 +546,222 @@ export default function ListYourFirm() {
             </fieldset>
           )}
 
-          {/* Product Section */}
-          <fieldset style={{ padding: '1.5rem', border: '2px solid #e0e0e0', borderRadius: '6px' }}>
-            <legend style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1a1a2e', padding: '0 0.5rem' }}>
-              Product Information
-            </legend>
+          {/* Service Section */}
+          {isServiceListing && (
+            <fieldset style={{ padding: '1.5rem', border: '2px solid #e0e0e0', borderRadius: '6px' }}>
+              <legend style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1a1a2e', padding: '0 0.5rem' }}>
+                Service Information
+              </legend>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginTop: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginTop: '1rem' }}>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>
+                    Service Name *
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={serviceData.name}
+                    onChange={handleServiceChange}
+                    required
+                    placeholder="e.g., Risk Management Consulting"
+                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>
+                    Short Description *
+                  </label>
+                  <textarea
+                    name="short_description"
+                    value={serviceData.short_description}
+                    onChange={handleServiceChange}
+                    required
+                    placeholder="Brief summary for service listings (max 500 chars)"
+                    maxLength="500"
+                    rows="2"
+                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                  <small style={{ color: '#999' }}>{serviceData.short_description.length}/500</small>
+                </div>
+
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>
+                    Full Description *
+                  </label>
+                  <textarea
+                    name="description"
+                    value={serviceData.description}
+                    onChange={handleServiceChange}
+                    required
+                    placeholder="Detailed description of your service offerings and expertise..."
+                    rows="5"
+                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>
+                    Category *
+                  </label>
+                  <select
+                    name="category"
+                    value={serviceData.category}
+                    onChange={handleServiceChange}
+                    required
+                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  >
+                    <option value="">Select category...</option>
+                    {categories.map(category => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>
+                    Service Type *
+                  </label>
+                  <select
+                    name="service_type"
+                    value={serviceData.service_type}
+                    onChange={handleServiceChange}
+                    required
+                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  >
+                    <option value="consulting">Consulting</option>
+                    <option value="implementation">Implementation</option>
+                    <option value="training">Training</option>
+                    <option value="support">Support & Maintenance</option>
+                    <option value="audit">Audit & Assessment</option>
+                    <option value="custom">Custom Development</option>
+                  </select>
+                </div>
+
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>
+                    Deliverables *
+                  </label>
+                  <textarea
+                    name="deliverables"
+                    value={serviceData.deliverables}
+                    onChange={handleServiceChange}
+                    required
+                    placeholder="What will clients receive? (e.g., Risk Assessment Report, Implementation Roadmap, Training Materials)"
+                    rows="3"
+                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>
+                    Pricing Model *
+                  </label>
+                  <select
+                    name="pricing_model"
+                    value={serviceData.pricing_model}
+                    onChange={handleServiceChange}
+                    required
+                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  >
+                    <option value="project">Project-based</option>
+                    <option value="retainer">Monthly Retainer</option>
+                    <option value="hourly">Hourly Rate</option>
+                    <option value="fixed">Fixed Price</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>
+                    Pricing Description *
+                  </label>
+                  <input
+                    type="text"
+                    name="pricing_description"
+                    value={serviceData.pricing_description}
+                    onChange={handleServiceChange}
+                    required
+                    placeholder="e.g., Starting from $50,000"
+                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>
+                    Case Studies URL
+                  </label>
+                  <input
+                    type="url"
+                    name="case_studies_url"
+                    value={serviceData.case_studies_url}
+                    onChange={handleServiceChange}
+                    placeholder="https://yourfirm.com/case-studies"
+                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <input
+                    type="checkbox"
+                    id="consultation_available"
+                    name="consultation_available"
+                    checked={serviceData.consultation_available}
+                    onChange={handleServiceChange}
+                    style={{ marginRight: '0.5rem' }}
+                  />
+                  <label htmlFor="consultation_available" style={{ fontWeight: 'bold', color: '#333' }}>
+                    Free Consultation Available
+                  </label>
+                </div>
+              </div>
+
+              {/* Service Metadata */}
+              <div style={{ marginTop: '2rem' }}>
+                <h3 style={{ marginBottom: '1rem', color: '#1a1a2e' }}>Service Tags & Metadata</h3>
+                {serviceMetadata.map((meta, index) => (
+                  <div key={index} style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      placeholder="Key (e.g., expertise)"
+                      value={meta.key}
+                      onChange={(e) => handleServiceMetadataChange(index, 'key', e.target.value)}
+                      style={{ flex: 1, padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Value (e.g., Risk Management)"
+                      value={meta.value}
+                      onChange={(e) => handleServiceMetadataChange(index, 'value', e.target.value)}
+                      style={{ flex: 2, padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveServiceMetadata(index)}
+                      className="button"
+                      style={{ backgroundColor: '#f44336', color: 'white' }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                <button type="button" onClick={handleAddServiceMetadata} className="button">
+                  + Add Metadata
+                </button>
+              </div>
+            </fieldset>
+          )}
+
+          {/* Product Section */}
+          {!isServiceListing && (
+            <fieldset style={{ padding: '1.5rem', border: '2px solid #e0e0e0', borderRadius: '6px' }}>
+              <legend style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1a1a2e', padding: '0 0.5rem' }}>
+                Product Information
+              </legend>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginTop: '1rem' }}>
               <div style={{ gridColumn: '1 / -1' }}>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>
                   Product Name *
@@ -622,6 +926,7 @@ export default function ListYourFirm() {
               </div>
             </div>
           </fieldset>
+          )}
 
           {/* Metadata Section */}
           <fieldset style={{ padding: '1.5rem', border: '2px solid #e0e0e0', borderRadius: '6px' }}>
@@ -722,7 +1027,7 @@ export default function ListYourFirm() {
                 fontSize: '1rem',
               }}
             >
-              Submit Listing
+              {isServiceListing ? 'Submit Service' : 'Submit Listing'}
             </button>
           </div>
         </form>

@@ -5,6 +5,8 @@ import './App.css';
 import Home from './pages/Home';
 import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
+import Services from './pages/Services';
+import ServiceDetail from './pages/ServiceDetail';
 import Vendors from './pages/Vendors';
 import VendorDetail from './pages/VendorDetail';
 import CategoryDetail from './pages/CategoryDetail';
@@ -51,6 +53,7 @@ export default function App() {
             <ul className="nav-menu">
               <li><Link to="/">Home</Link></li>
               <li><Link to="/products">Products</Link></li>
+              <li><Link to="/services">Professional Services</Link></li>
               <li><Link to="/vendors">Vendors</Link></li>
               <li><Link to="/list-your-firm">List Your Firm</Link></li>
             </ul>
@@ -61,11 +64,14 @@ export default function App() {
           <Route path="/" element={<Home categories={categories} vendors={vendors} />} />
           <Route path="/products" element={<Products />} />
           <Route path="/products/:id" element={<ProductDetail />} />
+          <Route path="/services" element={<Services />} />
+          <Route path="/services/:id" element={<ServiceDetail />} />
           <Route path="/vendors" element={<Vendors />} />
           <Route path="/vendors/:id" element={<VendorDetail />} />
           <Route path="/categories/:id" element={<CategoryDetail />} />
           <Route path="/list-your-firm" element={<ListYourFirm />} />
           <Route path="/list-product/:vendorId" element={<ListYourFirm />} />
+          <Route path="/list-service/:vendorId" element={<ListYourFirm />} />
         </Routes>
 
         <footer className="footer">

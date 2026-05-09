@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from products.models import Vendor, Category, Product, ProductMetadata
+from products.models import Vendor, Category, Product, ProductMetadata, Service, ServiceMetadata
 
 
 class Command(BaseCommand):
@@ -230,5 +230,98 @@ class Command(BaseCommand):
                         value=meta['value']
                     )
                     self.stdout.write(f'  Added metadata: {meta["key"]}={meta["value"]}')
+
+        # Create services from Solytics
+        services_data = [
+            {
+                'name': 'Risk Management Consulting',
+                'description': 'Comprehensive risk management consulting services to help organizations identify, assess, and mitigate financial and operational risks. Our experts provide strategic guidance and implementation support.',
+                'short_description': 'Expert risk management consulting and implementation',
+                'category': 'Risk Management',
+                'service_type': 'consulting',
+                'deliverables': 'Risk Assessment Report, Risk Mitigation Strategy, Implementation Roadmap, Training Materials',
+                'pricing_model': 'project',
+                'pricing_description': 'Project-based pricing starting from $50,000',
+                'consultation_available': True,
+                'metadata': [
+                    {'key': 'expertise', 'value': 'Risk Management'},
+                    {'key': 'industry', 'value': 'Financial Services'},
+                    {'key': 'certification', 'value': 'FRM Certified'},
+                ]
+            },
+            {
+                'name': 'Compliance Implementation',
+                'description': 'End-to-end compliance implementation services including regulatory framework setup, policy development, and compliance monitoring systems. We ensure your organization meets all regulatory requirements.',
+                'short_description': 'Complete compliance framework implementation',
+                'category': 'Compliance',
+                'service_type': 'implementation',
+                'deliverables': 'Compliance Framework, Policy Documents, Monitoring System, Training Program',
+                'pricing_model': 'retainer',
+                'pricing_description': 'Monthly retainer starting from $15,000',
+                'consultation_available': True,
+                'metadata': [
+                    {'key': 'expertise', 'value': 'Regulatory Compliance'},
+                    {'key': 'industry', 'value': 'Banking & Finance'},
+                    {'key': 'certification', 'value': 'Compliance Certified'},
+                ]
+            },
+            {
+                'name': 'Data Analytics Solutions',
+                'description': 'Advanced data analytics services to derive actionable insights from your financial data. We provide data strategy, analytics platform implementation, and ongoing data management support.',
+                'short_description': 'Data analytics strategy and implementation',
+                'category': 'Data Analytics',
+                'service_type': 'implementation',
+                'deliverables': 'Data Strategy Document, Analytics Platform, Dashboard Development, Data Training',
+                'pricing_model': 'project',
+                'pricing_description': 'Project-based pricing starting from $75,000',
+                'consultation_available': True,
+                'metadata': [
+                    {'key': 'expertise', 'value': 'Data Analytics'},
+                    {'key': 'industry', 'value': 'All Industries'},
+                    {'key': 'technology', 'value': 'Python, R, SQL'},
+                ]
+            },
+            {
+                'name': 'ESG Risk Assessment',
+                'description': 'Environmental, Social, and Governance (ESG) risk assessment and strategy development services. We help organizations integrate ESG considerations into their risk management frameworks.',
+                'short_description': 'ESG risk assessment and strategy development',
+                'category': 'Risk Management',
+                'service_type': 'consulting',
+                'deliverables': 'ESG Risk Report, ESG Strategy Framework, Implementation Plan, Monitoring Tools',
+                'pricing_model': 'project',
+                'pricing_description': 'Project-based pricing starting from $40,000',
+                'consultation_available': True,
+                'metadata': [
+                    {'key': 'expertise', 'value': 'ESG & Sustainability'},
+                    {'key': 'industry', 'value': 'All Sectors'},
+                    {'key': 'certification', 'value': 'ESG Certified'},
+                ]
+            },
+        ]
+
+        for serv_data in services_data:
+            metadata = serv_data.pop('metadata', [])
+            category = categories.get(serv_data.pop('category'))
+
+            service, created = Service.objects.get_or_create(
+                vendor=solytics_vendor,
+                name=serv_data['name'],
+                defaults={
+                    **serv_data,
+                    'category': category
+                }
+            )
+
+            if created:
+                self.stdout.write(self.style.SUCCESS(f'Created service: {service.name}'))
+
+                # Add metadata
+                for meta in metadata:
+                    ServiceMetadata.objects.get_or_create(
+                        service=service,
+                        key=meta['key'],
+                        value=meta['value']
+                    )
+                    self.stdout.write(f'  Added service metadata: {meta["key"]}={meta["value"]}')
 
         self.stdout.write(self.style.SUCCESS('✓ Sample data loaded successfully!'))

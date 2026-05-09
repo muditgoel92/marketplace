@@ -104,6 +104,7 @@ export default function VendorDetail() {
         <h2 className="section-title" style={{ margin: 0 }}>Products by {vendor.name}</h2>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
           <Link to={`/list-product/${id}`} className="button button-primary">+ List New Product</Link>
+          <Link to={`/list-service/${id}`} className="button button-primary">+ List New Service</Link>
           <Link to="/vendors" className="button">Back to Vendors</Link>
         </div>
       </div>
