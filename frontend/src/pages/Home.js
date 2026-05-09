@@ -9,6 +9,9 @@ export default function Home({ categories, vendors }) {
   const [products, setProducts] = useState([]);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState(null);
+  const [searchLoading, setSearchLoading] = useState(false);
 
   const fetchFeaturedListings = useCallback(async () => {
     try {
@@ -29,6 +32,51 @@ export default function Home({ categories, vendors }) {
     fetchFeaturedListings();
   }, [fetchFeaturedListings]);
 
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    const query = searchQuery.trim();
+
+    if (!query) {
+      setSearchResults(null);
+      return;
+    }
+
+    setSearchLoading(true);
+    try {
+      const encodedQuery = encodeURIComponent(query);
+      const [productsRes, servicesRes, vendorsRes, categoriesRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/products/?search=${encodedQuery}`),
+        axios.get(`${API_BASE_URL}/services/?search=${encodedQuery}`),
+        axios.get(`${API_BASE_URL}/vendors/?search=${encodedQuery}`),
+        axios.get(`${API_BASE_URL}/categories/?search=${encodedQuery}`),
+      ]);
+
+      setSearchResults({
+        products: productsRes.data.results || productsRes.data,
+        services: servicesRes.data.results || servicesRes.data,
+        vendors: vendorsRes.data.results || vendorsRes.data,
+        categories: categoriesRes.data.results || categoriesRes.data,
+      });
+    } catch (error) {
+      console.error('Error searching marketplace:', error);
+      setSearchResults({ products: [], services: [], vendors: [], categories: [] });
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    setSearchResults(null);
+  };
+
+  const hasSearchResults = searchResults && (
+    searchResults.products.length > 0 ||
+    searchResults.services.length > 0 ||
+    searchResults.vendors.length > 0 ||
+    searchResults.categories.length > 0
+  );
+
   return (
     <div className="container">
       <div className="hero">
@@ -42,6 +90,82 @@ export default function Home({ categories, vendors }) {
             Explore Professional Services →
           </Link>
         </div>
+      </div>
+
+      {/* Marketplace Search */}
+      <div className="card" style={{ marginBottom: '3rem' }}>
+        <form onSubmit={handleSearch} className="search-bar" style={{ marginBottom: searchResults ? '1.5rem' : 0 }}>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search products, services, vendors, and categories..."
+          />
+          <button type="submit">Search</button>
+          {searchResults && (
+            <button type="button" onClick={clearSearch} style={{ backgroundColor: '#757575', color: 'white' }}>
+              Clear
+            </button>
+          )}
+        </form>
+
+        {searchLoading && (
+          <div className="loader" style={{ minHeight: 'auto', padding: '1rem 0' }}>Searching marketplace...</div>
+        )}
+
+        {searchResults && !searchLoading && !hasSearchResults && (
+          <p style={{ color: '#666' }}>No matches found. Try a different search term.</p>
+        )}
+
+        {searchResults && !searchLoading && hasSearchResults && (
+          <div style={{ display: 'grid', gap: '1.5rem' }}>
+            {searchResults.products.length > 0 && (
+              <SearchResultGroup title="Products">
+                {searchResults.products.map(product => (
+                  <Link key={product.id} to={`/products/${product.id}`} className="card" style={{ textDecoration: 'none', boxShadow: 'none', border: '1px solid #eee' }}>
+                    <h3 className="product-name">{product.name}</h3>
+                    <p className="product-vendor">{product.vendor_name}</p>
+                    <p className="product-description">{product.short_description}</p>
+                  </Link>
+                ))}
+              </SearchResultGroup>
+            )}
+
+            {searchResults.services.length > 0 && (
+              <SearchResultGroup title="Services">
+                {searchResults.services.map(service => (
+                  <Link key={service.id} to={`/services/${service.id}`} className="card" style={{ textDecoration: 'none', boxShadow: 'none', border: '1px solid #eee' }}>
+                    <h3 className="product-name">{service.name}</h3>
+                    <p className="product-vendor">{service.vendor_name}</p>
+                    <p className="product-description">{service.short_description}</p>
+                  </Link>
+                ))}
+              </SearchResultGroup>
+            )}
+
+            {searchResults.vendors.length > 0 && (
+              <SearchResultGroup title="Vendors">
+                {searchResults.vendors.map(vendor => (
+                  <Link key={vendor.id} to={`/vendors/${vendor.id}`} className="card" style={{ textDecoration: 'none', boxShadow: 'none', border: '1px solid #eee' }}>
+                    <h3 className="product-name">{vendor.name}</h3>
+                    <p className="product-description">{vendor.description}</p>
+                  </Link>
+                ))}
+              </SearchResultGroup>
+            )}
+
+            {searchResults.categories.length > 0 && (
+              <SearchResultGroup title="Categories">
+                {searchResults.categories.map(category => (
+                  <Link key={category.id} to={`/categories/${category.id}`} className="card" style={{ textDecoration: 'none', boxShadow: 'none', border: '1px solid #eee' }}>
+                    <h3 className="product-name">{category.name}</h3>
+                    <p className="product-description">{category.description}</p>
+                  </Link>
+                ))}
+              </SearchResultGroup>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Categories Section */}
@@ -119,5 +243,16 @@ export default function Home({ categories, vendors }) {
         ))}
       </div>
     </div>
+  );
+}
+
+function SearchResultGroup({ title, children }) {
+  return (
+    <section>
+      <h3 style={{ color: '#1a1a2e', marginBottom: '1rem' }}>{title}</h3>
+      <div className="grid grid-3">
+        {children}
+      </div>
+    </section>
   );
 }
