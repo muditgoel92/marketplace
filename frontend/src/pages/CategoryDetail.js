@@ -9,18 +9,21 @@ export default function CategoryDetail() {
   const { id } = useParams();
   const [category, setCategory] = useState(null);
   const [products, setProducts] = useState([]);
+  const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchCategoryData = async () => {
       try {
-        const [categoryRes, productsRes] = await Promise.all([
+        const [categoryRes, productsRes, servicesRes] = await Promise.all([
           axios.get(`${API_BASE_URL}/categories/${id}/`),
           axios.get(`${API_BASE_URL}/products/?category=${id}`),
+          axios.get(`${API_BASE_URL}/services/?category=${id}`),
         ]);
 
         setCategory(categoryRes.data);
         setProducts(productsRes.data.results || productsRes.data);
+        setServices(servicesRes.data.results || servicesRes.data);
       } catch (error) {
         console.error('Error fetching category data:', error);
       } finally {
@@ -51,13 +54,14 @@ export default function CategoryDetail() {
           {category.description}
         </p>
         <p style={{ color: '#999' }}>
-          Showing {products.length} product{products.length !== 1 ? 's' : ''} in this category
+          Showing {products.length} product{products.length !== 1 ? 's' : ''} and {services.length} service{services.length !== 1 ? 's' : ''} in this category
         </p>
       </div>
 
       {/* Products Grid */}
+      <h2 className="section-title">Products</h2>
       {products.length === 0 ? (
-        <div className="loader">No products found in this category.</div>
+        <div className="loader" style={{ minHeight: 'auto', padding: '2rem 0' }}>No products found in this category.</div>
       ) : (
         <div className="grid grid-4">
           {products.map(product => (
@@ -77,6 +81,35 @@ export default function CategoryDetail() {
               )}
               <div style={{ display: 'flex', gap: '0.5rem', flexDirection: 'column' }}>
                 <Link to={`/products/${product.id}`} className="button">View Details</Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Services Grid */}
+      <h2 className="section-title" style={{ marginTop: '3rem' }}>Services</h2>
+      {services.length === 0 ? (
+        <div className="loader" style={{ minHeight: 'auto', padding: '2rem 0' }}>No services found in this category.</div>
+      ) : (
+        <div className="grid grid-4">
+          {services.map(service => (
+            <div key={service.id} className="card product-card">
+              <div className="product-image">Services</div>
+              <h3 className="product-name">{service.name}</h3>
+              <p className="product-vendor">{service.vendor_name}</p>
+              <p className="product-description">{service.short_description}</p>
+              <div className="product-meta">
+                <span className="rating stars">{service.rating}/5</span>
+                <span className="pricing-model">{service.pricing_model.replace('_', ' ')}</span>
+              </div>
+              {service.consultation_available && (
+                <div style={{ fontSize: '0.85rem', color: '#4caf50', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                  Free Consultation Available
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: '0.5rem', flexDirection: 'column' }}>
+                <Link to={`/services/${service.id}`} className="button">View Details</Link>
               </div>
             </div>
           ))}
