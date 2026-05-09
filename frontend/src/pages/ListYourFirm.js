@@ -13,6 +13,7 @@ export default function ListYourFirm() {
   const [categories, setCategories] = useState([]);
   const [showProductOnly, setShowProductOnly] = useState(!!vendorId);
   const isServiceListing = location.pathname.includes('/list-service/');
+  const isFullListing = !showProductOnly && !isServiceListing;
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -311,9 +312,10 @@ export default function ListYourFirm() {
         // Product-only submission for existing vendor
         await submitProduct(productData.vendor);
       } else {
-        // Both vendor and product submission
+        // Firm, product, and service submission
         const newVendorId = await submitVendor();
         await submitProduct(newVendorId);
+        await submitService(newVendorId);
       }
 
       setSubmitted(true);
@@ -334,12 +336,12 @@ export default function ListYourFirm() {
       <div className="card" style={{ maxWidth: '800px', margin: '0 auto' }}>
         <h1 style={{ marginBottom: '0.5rem', color: '#1a1a2e' }}>
           {isServiceListing ? '🛠️ List a New Service' :
-           showProductOnly ? '📦 List a New Product' : '🏢 List Your Firm & Products'}
+           showProductOnly ? '📦 List a New Product' : '🏢 List Your Firm, Products & Services'}
         </h1>
         <p style={{ color: '#666', marginBottom: '2rem' }}>
           {isServiceListing ? 'Add a new professional service to your existing firm.' :
            showProductOnly ? 'Add a new product to your existing firm.' :
-           'Register your firm and list your first product on our marketplace.'}
+           'Register your firm and list your first product and professional service on our marketplace.'}
         </p>
 
         {error && (
@@ -547,7 +549,7 @@ export default function ListYourFirm() {
           )}
 
           {/* Service Section */}
-          {isServiceListing && (
+          {(isServiceListing || isFullListing) && (
             <fieldset style={{ padding: '1.5rem', border: '2px solid #e0e0e0', borderRadius: '6px' }}>
               <legend style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1a1a2e', padding: '0 0.5rem' }}>
                 Service Information
@@ -670,7 +672,8 @@ export default function ListYourFirm() {
                     <option value="project">Project-based</option>
                     <option value="retainer">Monthly Retainer</option>
                     <option value="hourly">Hourly Rate</option>
-                    <option value="fixed">Fixed Price</option>
+                    <option value="daily">Daily Rate</option>
+                    <option value="custom">Custom Pricing</option>
                   </select>
                 </div>
 
@@ -929,6 +932,7 @@ export default function ListYourFirm() {
           )}
 
           {/* Metadata Section */}
+          {!isServiceListing && (
           <fieldset style={{ padding: '1.5rem', border: '2px solid #e0e0e0', borderRadius: '6px' }}>
             <legend style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1a1a2e', padding: '0 0.5rem' }}>
               Product Tags (Optional)
@@ -995,6 +999,7 @@ export default function ListYourFirm() {
               </button>
             </div>
           </fieldset>
+          )}
 
           {/* Actions */}
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '2rem' }}>
@@ -1012,7 +1017,7 @@ export default function ListYourFirm() {
                   fontSize: '1rem',
                 }}
               >
-                {showProductOnly ? 'List Firm + Product' : 'Product Only'}
+                {showProductOnly ? 'List Firm + Product + Service' : 'Product Only'}
               </button>
             )}
             <button

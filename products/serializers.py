@@ -45,8 +45,8 @@ class DemoRequestSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    vendor = VendorSerializer(read_only=True)
-    category = CategorySerializer(read_only=True)
+    vendor = serializers.PrimaryKeyRelatedField(queryset=Vendor.objects.all())
+    category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
     metadata = ProductMetadataSerializer(many=True, read_only=True)
     reviews = ReviewSerializer(many=True, read_only=True)
 
@@ -58,6 +58,12 @@ class ProductSerializer(serializers.ModelSerializer):
             'image', 'demo_available', 'documentation_url', 'rating',
             'review_count', 'created_at', 'updated_at', 'metadata', 'reviews'
         ]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['vendor'] = VendorSerializer(instance.vendor).data
+        data['category'] = CategorySerializer(instance.category).data if instance.category else None
+        return data
 
 
 class ProductListSerializer(serializers.ModelSerializer):
@@ -104,8 +110,8 @@ class ServiceInquirySerializer(serializers.ModelSerializer):
 
 
 class ServiceSerializer(serializers.ModelSerializer):
-    vendor = VendorSerializer(read_only=True)
-    category = CategorySerializer(read_only=True)
+    vendor = serializers.PrimaryKeyRelatedField(queryset=Vendor.objects.all())
+    category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
     metadata = ServiceMetadataSerializer(many=True, read_only=True)
     reviews = ServiceReviewSerializer(many=True, read_only=True)
 
@@ -117,6 +123,12 @@ class ServiceSerializer(serializers.ModelSerializer):
             'image', 'consultation_available', 'case_studies_url', 'rating',
             'review_count', 'created_at', 'updated_at', 'metadata', 'reviews'
         ]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['vendor'] = VendorSerializer(instance.vendor).data
+        data['category'] = CategorySerializer(instance.category).data if instance.category else None
+        return data
 
 
 class ServiceListSerializer(serializers.ModelSerializer):

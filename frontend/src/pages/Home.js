@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import '../App.css';
@@ -7,22 +7,27 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:800
 
 export default function Home({ categories, vendors }) {
   const [products, setProducts] = useState([]);
+  const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchFeaturedProducts();
-  }, []);
-
-  const fetchFeaturedProducts = async () => {
+  const fetchFeaturedListings = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/products/`);
-      setProducts(res.data.results || res.data);
+      const [productsRes, servicesRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/products/`),
+        axios.get(`${API_BASE_URL}/services/`),
+      ]);
+      setProducts(productsRes.data.results || productsRes.data);
+      setServices(servicesRes.data.results || servicesRes.data);
     } catch (error) {
-      console.error('Error fetching products:', error);
+      console.error('Error fetching featured listings:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchFeaturedListings();
+  }, [fetchFeaturedListings]);
 
   return (
     <div className="container">
@@ -65,6 +70,28 @@ export default function Home({ categories, vendors }) {
                 <span className="pricing-model">{product.pricing_model}</span>
               </div>
               <Link to={`/products/${product.id}`} className="button">View Details</Link>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Featured Services */}
+      <h2 className="section-title" style={{ marginTop: '3rem' }}>Featured Services</h2>
+      {loading ? (
+        <div className="loader">Loading services...</div>
+      ) : (
+        <div className="grid grid-4">
+          {services.map(service => (
+            <div key={service.id} className="card product-card">
+              <div className="product-image">Services</div>
+              <h3 className="product-name">{service.name}</h3>
+              <p className="product-vendor">{service.vendor_name}</p>
+              <p className="product-description">{service.short_description}</p>
+              <div className="product-meta">
+                <span className="rating stars">{service.rating}/5</span>
+                <span className="pricing-model">{service.pricing_model}</span>
+              </div>
+              <Link to={`/services/${service.id}`} className="button">View Details</Link>
             </div>
           ))}
         </div>
