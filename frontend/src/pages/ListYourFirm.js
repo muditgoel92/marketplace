@@ -41,6 +41,12 @@ export default function ListYourFirm() {
     documentation_url: '',
   });
 
+  // File state for uploads
+  const [vendorLogo, setVendorLogo] = useState(null);
+  const [vendorLogoPreview, setVendorLogoPreview] = useState(null);
+  const [productImage, setProductImage] = useState(null);
+  const [productImagePreview, setProductImagePreview] = useState(null);
+
   // Metadata/tags state
   const [metadata, setMetadata] = useState([
     { key: 'industry', value: '' },
@@ -73,12 +79,32 @@ export default function ListYourFirm() {
     setVendorData({ ...vendorData, [name]: value });
   };
 
+  const handleVendorLogoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setVendorLogo(file);
+      const reader = new FileReader();
+      reader.onload = () => setVendorLogoPreview(reader.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleProductChange = (e) => {
     const { name, value, type, checked } = e.target;
     setProductData({
       ...productData,
       [name]: type === 'checkbox' ? checked : value,
     });
+  };
+
+  const handleProductImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProductImage(file);
+      const reader = new FileReader();
+      reader.onload = () => setProductImagePreview(reader.result);
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleMetadataChange = (index, field, value) => {
@@ -106,11 +132,23 @@ export default function ListYourFirm() {
 
   const submitVendor = async () => {
     try {
-      const vendorPayload = {
-        ...vendorData,
-        rating: 0,
-      };
-      const vendorRes = await axios.post(`${API_BASE_URL}/vendors/`, vendorPayload);
+      const formData = new FormData();
+      formData.append('name', vendorData.name);
+      formData.append('description', vendorData.description);
+      formData.append('website', vendorData.website);
+      formData.append('email', vendorData.email);
+      formData.append('phone', vendorData.phone);
+      formData.append('founded_year', vendorData.founded_year);
+      formData.append('employees', vendorData.employees);
+      formData.append('locations', vendorData.locations);
+      formData.append('rating', 0);
+      if (vendorLogo) {
+        formData.append('logo', vendorLogo);
+      }
+
+      const vendorRes = await axios.post(`${API_BASE_URL}/vendors/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       return vendorRes.data.id;
     } catch (error) {
       console.error('Error creating vendor:', error);
@@ -124,14 +162,26 @@ export default function ListYourFirm() {
 
   const submitProduct = async (vendorIdToUse) => {
     try {
-      const productPayload = {
-        ...productData,
-        vendor: vendorIdToUse,
-        rating: 0,
-        review_count: 0,
-      };
+      const formData = new FormData();
+      formData.append('vendor', vendorIdToUse);
+      formData.append('name', productData.name);
+      formData.append('short_description', productData.short_description);
+      formData.append('description', productData.description);
+      formData.append('category', productData.category);
+      formData.append('features', productData.features);
+      formData.append('pricing_model', productData.pricing_model);
+      formData.append('pricing_description', productData.pricing_description);
+      formData.append('demo_available', productData.demo_available);
+      formData.append('documentation_url', productData.documentation_url);
+      formData.append('rating', 0);
+      formData.append('review_count', 0);
+      if (productImage) {
+        formData.append('image', productImage);
+      }
 
-      const productRes = await axios.post(`${API_BASE_URL}/products/`, productPayload);
+      const productRes = await axios.post(`${API_BASE_URL}/products/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
 
       // Submit metadata for the product
       if (metadata && metadata.length > 0) {
@@ -348,6 +398,27 @@ export default function ListYourFirm() {
                     style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}
                   />
                 </div>
+
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>
+                    Firm Logo / Photo
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleVendorLogoChange}
+                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                  {vendorLogoPreview && (
+                    <div style={{ marginTop: '1rem' }}>
+                      <img
+                        src={vendorLogoPreview}
+                        alt="Firm logo preview"
+                        style={{ maxWidth: '200px', maxHeight: '200px', borderRadius: '4px' }}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </fieldset>
           )}
@@ -527,6 +598,27 @@ export default function ListYourFirm() {
                 <label htmlFor="demo_available" style={{ fontWeight: 'bold', color: '#333', cursor: 'pointer' }}>
                   Demo Available
                 </label>
+              </div>
+
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>
+                  Product Photo / Screenshot
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleProductImageChange}
+                  style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                />
+                {productImagePreview && (
+                  <div style={{ marginTop: '1rem' }}>
+                    <img
+                      src={productImagePreview}
+                      alt="Product image preview"
+                      style={{ maxWidth: '300px', maxHeight: '200px', borderRadius: '4px' }}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </fieldset>
