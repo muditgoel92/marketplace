@@ -9,6 +9,7 @@ import Services from './pages/Services';
 import ServiceDetail from './pages/ServiceDetail';
 import Vendors from './pages/Vendors';
 import VendorDetail from './pages/VendorDetail';
+import Categories from './pages/Categories';
 import CategoryDetail from './pages/CategoryDetail';
 import ListYourFirm from './pages/ListYourFirm';
 
@@ -52,6 +53,7 @@ export default function App() {
             </Link>
             <ul className="nav-menu">
               <li><Link to="/">Home</Link></li>
+              <li><Link to="/categories">Categories</Link></li>
               <li><Link to="/products">Products</Link></li>
               <li><Link to="/services">Professional Services</Link></li>
               <li><Link to="/vendors">Vendors</Link></li>
@@ -68,6 +70,7 @@ export default function App() {
           <Route path="/services/:id" element={<ServiceDetail />} />
           <Route path="/vendors" element={<Vendors />} />
           <Route path="/vendors/:id" element={<VendorDetail />} />
+          <Route path="/categories" element={<Categories categories={categories} />} />
           <Route path="/categories/:id" element={<CategoryDetail />} />
           <Route path="/list-your-firm" element={<ListYourFirm />} />
           <Route path="/list-product/:vendorId" element={<ListYourFirm />} />

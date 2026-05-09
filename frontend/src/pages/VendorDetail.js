@@ -9,6 +9,7 @@ export default function VendorDetail() {
   const { id } = useParams();
   const [vendor, setVendor] = useState(null);
   const [products, setProducts] = useState([]);
+  const [services, setServices] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [categories, setCategories] = useState([]);
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -19,15 +20,17 @@ export default function VendorDetail() {
       setLoading(true);
       try {
         const params = categoryFilter ? `&category=${categoryFilter}` : '';
-        const [vendorRes, productsRes, reviewsRes, categoriesRes] = await Promise.all([
+        const [vendorRes, productsRes, servicesRes, reviewsRes, categoriesRes] = await Promise.all([
           axios.get(`${API_BASE_URL}/vendors/${id}/`),
           axios.get(`${API_BASE_URL}/products/?vendor=${id}${params}`),
+          axios.get(`${API_BASE_URL}/services/?vendor=${id}${params}`),
           axios.get(`${API_BASE_URL}/reviews/?vendor=${id}`),
           axios.get(`${API_BASE_URL}/categories/`),
         ]);
 
         setVendor(vendorRes.data);
         setProducts(productsRes.data.results || productsRes.data);
+        setServices(servicesRes.data.results || servicesRes.data);
         setReviews(reviewsRes.data.results || reviewsRes.data);
         setCategories(categoriesRes.data.results || categoriesRes.data);
       } catch (error) {
@@ -99,9 +102,9 @@ export default function VendorDetail() {
         </div>
       </div>
 
-      {/* Products Section */}
+      {/* Listings Section */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        <h2 className="section-title" style={{ margin: 0 }}>Products by {vendor.name}</h2>
+        <h2 className="section-title" style={{ margin: 0 }}>Products & Services by {vendor.name}</h2>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
           <Link to={`/list-product/${id}`} className="button button-primary">+ List New Product</Link>
           <Link to={`/list-service/${id}`} className="button button-primary">+ List New Service</Link>
@@ -128,8 +131,9 @@ export default function VendorDetail() {
         </select>
       </div>
 
+      <h3 className="section-title">Products</h3>
       {products.length === 0 ? (
-        <div className="loader">No products found from this vendor.</div>
+        <div className="loader" style={{ minHeight: 'auto', padding: '2rem 0' }}>No products found from this vendor.</div>
       ) : (
         <div className="grid grid-4">
           {products.map(product => (
@@ -150,6 +154,36 @@ export default function VendorDetail() {
               {product.category_name && (
                 <p style={{ marginTop: '0.75rem', color: '#999', fontSize: '0.85rem' }}>
                   Category: {product.category_name}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <h3 className="section-title" style={{ marginTop: '3rem' }}>Services</h3>
+      {services.length === 0 ? (
+        <div className="loader" style={{ minHeight: 'auto', padding: '2rem 0' }}>No services found from this vendor.</div>
+      ) : (
+        <div className="grid grid-4">
+          {services.map(service => (
+            <div key={service.id} className="card product-card">
+              <div className="product-image">Services</div>
+              <h3 className="product-name">{service.name}</h3>
+              <p className="product-description">{service.short_description}</p>
+              <div className="product-meta">
+                <span className="rating stars">{service.rating}/5</span>
+                <span className="pricing-model">{service.pricing_model.replace('_', ' ')}</span>
+              </div>
+              {service.consultation_available && (
+                <div style={{ fontSize: '0.85rem', color: '#4caf50', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                  Free Consultation Available
+                </div>
+              )}
+              <Link to={`/services/${service.id}`} className="button">View Details</Link>
+              {service.category_name && (
+                <p style={{ marginTop: '0.75rem', color: '#999', fontSize: '0.85rem' }}>
+                  Category: {service.category_name}
                 </p>
               )}
             </div>
