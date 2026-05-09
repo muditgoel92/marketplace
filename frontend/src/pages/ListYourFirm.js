@@ -413,7 +413,7 @@ export default function ListYourFirm() {
                     <div style={{ marginTop: '1rem' }}>
                       <img
                         src={vendorLogoPreview}
-                        alt="Firm logo preview"
+                        alt="Selected firm logo"
                         style={{ maxWidth: '200px', maxHeight: '200px', borderRadius: '4px' }}
                       />
                     </div>
@@ -614,7 +614,7 @@ export default function ListYourFirm() {
                   <div style={{ marginTop: '1rem' }}>
                     <img
                       src={productImagePreview}
-                      alt="Product image preview"
+                      alt="Selected product screenshot"
                       style={{ maxWidth: '300px', maxHeight: '200px', borderRadius: '4px' }}
                     />
                   </div>
