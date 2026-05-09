@@ -34,9 +34,14 @@ export default function Home({ categories, vendors }) {
       <div className="hero">
         <h1>🏢 Financial Products Marketplace</h1>
         <p>Discover, compare, and connect with leading financial products and solutions</p>
-        <Link to="/products" className="button button-primary">
-          Explore Products →
-        </Link>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+          <Link to="/products" className="button button-primary">
+            Explore Products →
+          </Link>
+          <Link to="/services" className="button button-primary">
+            Explore Professional Services →
+          </Link>
+        </div>
       </div>
 
       {/* Categories Section */}
