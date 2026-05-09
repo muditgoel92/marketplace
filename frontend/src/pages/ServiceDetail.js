@@ -9,24 +9,19 @@ export default function ServiceDetail() {
   const { id } = useParams();
   const [service, setService] = useState(null);
   const [reviews, setReviews] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [categoryFilter, setCategoryFilter] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchServiceData = async () => {
       setLoading(true);
       try {
-        const params = categoryFilter ? `&category=${categoryFilter}` : '';
-        const [serviceRes, reviewsRes, categoriesRes] = await Promise.all([
+        const [serviceRes, reviewsRes] = await Promise.all([
           axios.get(`${API_BASE_URL}/services/${id}/`),
           axios.get(`${API_BASE_URL}/service-reviews/?service=${id}`),
-          axios.get(`${API_BASE_URL}/categories/`),
         ]);
 
         setService(serviceRes.data);
         setReviews(reviewsRes.data.results || reviewsRes.data);
-        setCategories(categoriesRes.data.results || categoriesRes.data);
       } catch (error) {
         console.error('Error fetching service data:', error);
       } finally {
@@ -35,11 +30,7 @@ export default function ServiceDetail() {
     };
 
     fetchServiceData();
-  }, [id, categoryFilter]);
-
-  const handleCategoryChange = (e) => {
-    setCategoryFilter(e.target.value);
-  };
+  }, [id]);
 
   if (loading) {
     return <div className="loader">Loading service details...</div>;
@@ -122,25 +113,6 @@ export default function ServiceDetail() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
         <h2 className="section-title" style={{ margin: 0 }}>More Services from {service.vendor.name}</h2>
         <Link to="/services" className="button">Back to Services</Link>
-      </div>
-
-      <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-        <label htmlFor="service-category-filter" style={{ color: '#333', fontWeight: 'bold' }}>
-          Filter by category:
-        </label>
-        <select
-          id="service-category-filter"
-          value={categoryFilter}
-          onChange={handleCategoryChange}
-          style={{ padding: '0.75rem', borderRadius: '6px', border: '2px solid #ddd', minWidth: '240px' }}
-        >
-          <option value="">All categories</option>
-          {categories.map(category => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
       </div>
 
       {/* Service Inquiry Form */}

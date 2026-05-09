@@ -12,7 +12,7 @@ export default function ListYourFirm() {
   const [vendors, setVendors] = useState([]);
   const [categories, setCategories] = useState([]);
   const [showProductOnly, setShowProductOnly] = useState(!!vendorId);
-  const [isServiceListing, setIsServiceListing] = useState(location.pathname.includes('/list-service/'));
+  const isServiceListing = location.pathname.includes('/list-service/');
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);

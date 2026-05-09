@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import '../App.css';
@@ -15,12 +15,7 @@ export default function Services() {
   const [vendorFilter, setVendorFilter] = useState('');
   const [serviceTypeFilter, setServiceTypeFilter] = useState('');
 
-  useEffect(() => {
-    fetchServices();
-    fetchFilters();
-  }, [searchTerm, categoryFilter, vendorFilter, serviceTypeFilter]);
-
-  const fetchServices = async () => {
+  const fetchServices = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       if (searchTerm) params.append('search', searchTerm);
@@ -35,9 +30,9 @@ export default function Services() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchTerm, categoryFilter, vendorFilter, serviceTypeFilter]);
 
-  const fetchFilters = async () => {
+  const fetchFilters = useCallback(async () => {
     try {
       const [categoriesRes, vendorsRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/categories/`),
@@ -48,7 +43,12 @@ export default function Services() {
     } catch (error) {
       console.error('Error fetching filters:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchServices();
+    fetchFilters();
+  }, [fetchServices, fetchFilters]);
 
   const handleSearch = (e) => {
     e.preventDefault();
