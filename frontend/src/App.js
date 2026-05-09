@@ -8,6 +8,7 @@ import ProductDetail from './pages/ProductDetail';
 import Vendors from './pages/Vendors';
 import VendorDetail from './pages/VendorDetail';
 import CategoryDetail from './pages/CategoryDetail';
+import ListYourFirm from './pages/ListYourFirm';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000/api';
 
@@ -51,6 +52,7 @@ export default function App() {
               <li><Link to="/">Home</Link></li>
               <li><Link to="/products">Products</Link></li>
               <li><Link to="/vendors">Vendors</Link></li>
+              <li><Link to="/list-your-firm">List Your Firm</Link></li>
             </ul>
           </div>
         </nav>
@@ -62,6 +64,8 @@ export default function App() {
           <Route path="/vendors" element={<Vendors />} />
           <Route path="/vendors/:id" element={<VendorDetail />} />
           <Route path="/categories/:id" element={<CategoryDetail />} />
+          <Route path="/list-your-firm" element={<ListYourFirm />} />
+          <Route path="/list-product/:vendorId" element={<ListYourFirm />} />
         </Routes>
 
         <footer className="footer">
