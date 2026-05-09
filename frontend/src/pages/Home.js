@@ -32,10 +32,7 @@ export default function Home({ categories, vendors }) {
     fetchFeaturedListings();
   }, [fetchFeaturedListings]);
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    const query = searchQuery.trim();
-
+  const searchMarketplace = useCallback(async (query) => {
     if (!query) {
       setSearchResults(null);
       return;
@@ -63,6 +60,28 @@ export default function Home({ categories, vendors }) {
     } finally {
       setSearchLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    const query = searchQuery.trim();
+
+    if (!query) {
+      setSearchResults(null);
+      setSearchLoading(false);
+      return undefined;
+    }
+
+    setSearchLoading(true);
+    const debounceTimer = setTimeout(() => {
+      searchMarketplace(query);
+    }, 300);
+
+    return () => clearTimeout(debounceTimer);
+  }, [searchQuery, searchMarketplace]);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    searchMarketplace(searchQuery.trim());
   };
 
   const clearSearch = () => {
@@ -101,7 +120,6 @@ export default function Home({ categories, vendors }) {
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search products, services, vendors, and categories..."
           />
-          <button type="submit">Search</button>
           {searchResults && (
             <button type="button" onClick={clearSearch} style={{ backgroundColor: '#757575', color: 'white' }}>
               Clear
